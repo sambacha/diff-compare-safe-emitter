@@ -1,0 +1,88 @@
+<pre style="font-family:consolas,monospace">
+<span style="color:#880000">------ </span><span style="font-weight:bold">torus.ts 2021-10-28 11:55:29.000000Z</span>
+<span style="color:#008800">++++++ </span><span style="font-weight:bold">metamask.ts 2021-10-28 11:55:41.000000Z</span>
+<span style="color:#000000"><span style="background-color:#c0c0c0">@|</span></span><span style="font-weight:bold">-1,84 +1,74</span> ============================================================
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span><span style="color:#c0c0c0">import { EventEmitter } from</span><span style="color:#880000"> "events"</span><span style="color:#c0c0c0">;</span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span>
+<span style="color:#000000"><span style="background-color:#008800">+|</span></span>import { EventEmitter } from<span style="color:#008800"> 'events'</span>;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>type Handler = (...args: any[]) =&gt; void;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>interface EventMap {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  [k: string]: Handler | Handler[] | undefined;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>}
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span><span style="color:#c0c0c0">function safeApply&lt;T, A extends any[]&gt;(handler: (this: T, ...</span><span style="color:#880000">handlerArgs</span><span style="color:#c0c0c0">: A) =&gt; void, context: T, args: A): void {</span>
+<span style="color:#000000"><span style="background-color:#008800">+|</span></span>function safeApply&lt;T, A extends any[]&gt; (handler: (this: T, ...<span style="color:#008800">args</span>: A) =&gt; void, context: T, args: A): void {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  try {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    Reflect.apply(handler, context, args);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  } catch (err) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    // Throw error after timeout so as not to interrupt the stack
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    setTimeout(() =&gt; {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      throw err;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    });
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>}
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>function arrayClone&amp;lt;T&amp;gt; (arr: T[]): T[] {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  const n = arr.length;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  const copy = new Array(n);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  for (let i = 0; i &lt; n; i += 1) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    copy[i] = arr[i];
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  return copy;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>}
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>export default class SafeEventEmitter extends EventEmitter {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  emit (type: string, ...args: any[]): boolean {
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span><span style="color:#c0c0c0">    let doError = type ===</span><span style="color:#880000"> "error"</span><span style="color:#c0c0c0">;</span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span>
+<span style="color:#000000"><span style="background-color:#008800">+|</span></span>    let doError = type ===<span style="color:#008800"> 'error'</span>;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    const events: EventMap = (this as any)._events;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    if (events !== undefined) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      doError = doError &amp;&amp; events.error === undefined;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    } else if (!doError) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      return false;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    // If there is no 'error' event listener then throw.
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    if (doError) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      let er;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      if (args.length &gt; 0) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>        [er] = args;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      if (er instanceof Error) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>        // Note: The comments on the `throw` lines are intentional, they show
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>        // up in Node's output if this results in an unhandled exception.
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>        throw er; // Unhandled 'error' event
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      // At least give some kind of context to the user
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span><span style="color:#c0c0c0">      const err = new Error(`Unhandled error.${er ? ` (${er.message})` :</span><span style="color:#880000"> ""</span><span style="color:#c0c0c0">}`);</span>
+<span style="color:#000000"><span style="background-color:#008800">+|</span></span>      const err = new Error(`Unhandled error.${er ? ` (${er.message})` :<span style="color:#008800"> ''</span>}`);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      (err as any).context = er;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      throw err; // Unhandled 'error' event
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    const handler = events[type];
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    if (handler === undefined) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      return false;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span>
+<span style="color:#000000"><span style="background-color:#880000">-|</span></span><span style="color:#c0c0c0">    if (typeof handler ===</span><span style="color:#880000"> "function"</span><span style="color:#c0c0c0">) {</span>
+<span style="color:#000000"><span style="background-color:#008800">+|</span></span>    if (typeof handler ===<span style="color:#008800"> 'function'</span>) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      safeApply(handler, this, args);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    } else {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      const len = handler.length;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      const listeners = arrayClone(handler);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      for (let i = 0; i &lt; len; i += 1) {
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>        safeApply(listeners[i], this, args);
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>      }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>    return true;
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>  }
+<span style="color:#000000"><span style="background-color:#c0c0c0"> |</span></span>}
+</pre>
